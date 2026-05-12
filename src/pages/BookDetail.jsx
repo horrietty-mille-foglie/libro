@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  fetchBookById,
-  updateBook,
-  deleteBook,
-  fetchNotesByBookId,
-  deleteNote,
+  fetchBookById, updateBook, deleteBook,
+  fetchNotesByBookId, deleteNote,
+  fetchBookImages, createBookImage, deleteBookImage,
+  updateBookImageCaption,
 } from '../lib/api'
+import { deleteImage, getImageUrl } from '../lib/storage'
+import ImageUploader from '../components/ImageUploader'
 
 const STATUS_OPTIONS = ['積読', '読書中', '読了']
 
@@ -27,7 +28,7 @@ function formatDate(dateStr) {
   })
 }
 
-// ── 日付編集モーダル ───────────────────────────────────────────
+// ── 日付編集モーダル ──────────────────────────────────────────
 function DateModal({ startedAt, finishedAt, onSave, onClose }) {
   const [s, setS] = useState(startedAt || '')
   const [f, setF] = useState(finishedAt || '')
@@ -39,37 +40,33 @@ function DateModal({ startedAt, finishedAt, onSave, onClose }) {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">開始日</label>
-            <input
-              type="date"
-              value={s}
-              onChange={e => setS(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <input type="date" value={s} onChange={e => setS(e.target.value)}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">読了日</label>
-            <input
-              type="date"
-              value={f}
-              onChange={e => setF(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <input type="date" value={f} onChange={e => setF(e.target.value)}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
         </div>
         <div className="flex gap-3 mt-6">
-          <button
-            onClick={() => onSave(s || null, f || null)}
-            className="flex-1 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
-          >
-            保存
-          </button>
-          <button
-            onClick={onClose}
-            className="flex-1 py-2 border border-gray-300 text-gray-600 text-sm font-medium rounded-md hover:bg-gray-50 transition-colors"
-          >
-            キャンセル
-          </button>
+          <button onClick={() => onSave(s || null, f || null)}
+            className="flex-1 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors">保存</button>
+          <button onClick={onClose}
+            className="flex-1 py-2 border border-gray-300 text-gray-600 text-sm font-medium rounded-md hover:bg-gray-50 transition-colors">キャンセル</button>
         </div>
+      </div>
+    </div>
+  )
+}
+
+// ── 原寸モーダル ──────────────────────────────────────────────
+function ImageModal({ url, onClose }) {
+  return (
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="relative" onClick={e => e.stopPropagation()}>
+        <button onClick={onClose} className="absolute -top-10 right-0 text-white text-sm hover:text-gray-300">✕ 閉じる</button>
+        <img src={url} alt="" className="max-w-[90vw] max-h-[85vh] object-contain rounded" />
       </div>
     </div>
   )
@@ -94,7 +91,6 @@ function NoteCard({ note, bookId, onDeleted, onEdit }) {
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
-      {/* ヘッダー */}
       {(note.chapter || note.page) && (
         <div className="flex items-center gap-2 text-xs text-gray-500 mb-3 font-medium">
           {note.chapter && <span>{note.chapter}</span>}
@@ -103,7 +99,6 @@ function NoteCard({ note, bookId, onDeleted, onEdit }) {
         </div>
       )}
 
-      {/* 引用 */}
       {note.quote && (
         <div className="mb-3 pl-3 border-l-4 border-blue-200 bg-gray-50 rounded-r-md py-2 pr-3">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">引用</p>
@@ -111,7 +106,6 @@ function NoteCard({ note, bookId, onDeleted, onEdit }) {
         </div>
       )}
 
-      {/* 考察 */}
       {note.thought && (
         <div className="mb-3">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">考察</p>
@@ -119,21 +113,22 @@ function NoteCard({ note, bookId, onDeleted, onEdit }) {
         </div>
       )}
 
-      {/* フッター */}
+      {/* タグチップ */}
+      {note.tags && note.tags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {note.tags.map(tag => (
+            <span key={tag.id} className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-medium">
+              {tag.name}
+            </span>
+          ))}
+        </div>
+      )}
+
       <div className="flex gap-2 justify-end pt-2 border-t border-gray-100">
-        <button
-          onClick={() => onEdit(note)}
-          className="text-xs px-3 py-1.5 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 transition-colors"
-        >
-          編集
-        </button>
-        <button
-          onClick={handleDelete}
-          disabled={deleting}
-          className="text-xs px-3 py-1.5 border border-red-200 rounded-md text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
-        >
-          削除
-        </button>
+        <button onClick={() => onEdit(note)}
+          className="text-xs px-3 py-1.5 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 transition-colors">編集</button>
+        <button onClick={handleDelete} disabled={deleting}
+          className="text-xs px-3 py-1.5 border border-red-200 rounded-md text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors">削除</button>
       </div>
     </div>
   )
@@ -168,25 +163,15 @@ function NotesTab({ bookId, navigate }) {
       ) : (
         <div className="space-y-4">
           {notes.map(note => (
-            <NoteCard
-              key={note.id}
-              note={note}
-              bookId={bookId}
-              onDeleted={handleDeleted}
-              onEdit={handleEdit}
-            />
+            <NoteCard key={note.id} note={note} bookId={bookId} onDeleted={handleDeleted} onEdit={handleEdit} />
           ))}
         </div>
       )}
-
-      {/* FAB */}
       <button
         onClick={() => navigate(`/books/${bookId}/notes/new`)}
         className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white text-2xl rounded-full shadow-lg hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center z-20 cursor-pointer"
         title="メモを追加"
-      >
-        +
-      </button>
+      >+</button>
     </div>
   )
 }
@@ -195,8 +180,22 @@ function NotesTab({ bookId, navigate }) {
 function SummaryTab({ book, onBookUpdated }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(book.summary || '')
+  const [bookImages, setBookImages] = useState([])
+  const [imagesLoading, setImagesLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [modalUrl, setModalUrl] = useState(null)
+
+  useEffect(() => {
+    fetchBookImages(book.id)
+      .then(setBookImages)
+      .catch(() => {})
+      .finally(() => setImagesLoading(false))
+  }, [book.id])
+
+  const handleImagesChange = async (nextImages) => {
+    setBookImages(nextImages)
+  }
 
   const handleSave = async () => {
     setSaving(true)
@@ -204,6 +203,22 @@ function SummaryTab({ book, onBookUpdated }) {
     try {
       const updated = await updateBook(book.id, { summary: draft })
       onBookUpdated(updated)
+
+      // 新規アップロード画像を DB に登録
+      const newImages = bookImages.filter(img => img._isNew)
+      if (newImages.length > 0) {
+        const existing = bookImages.filter(img => !img._isNew)
+        const created = await Promise.all(newImages.map((img, i) =>
+          createBookImage({
+            book_id: book.id,
+            storage_path: img.storage_path,
+            caption: img.caption || null,
+            display_order: existing.length + i,
+          })
+        ))
+        setBookImages([...existing, ...created])
+      }
+
       setEditing(false)
     } catch {
       setError('保存に失敗しました')
@@ -216,32 +231,39 @@ function SummaryTab({ book, onBookUpdated }) {
     setDraft(book.summary || '')
     setEditing(false)
     setError('')
+    // 新規アップロード済みだが保存していない画像を Storage から削除
+    const newImages = bookImages.filter(img => img._isNew)
+    newImages.forEach(img => deleteImage(img.storage_path).catch(() => {}))
+    setBookImages(bookImages.filter(img => !img._isNew))
   }
+
+  const thumbUrl = (p) => getImageUrl(p, { width: 200, height: 200 })
+  const fullUrl  = (p) => getImageUrl(p)
 
   return (
     <div>
       {editing ? (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <textarea
             value={draft}
             onChange={e => setDraft(e.target.value)}
-            rows={14}
+            rows={12}
             placeholder="書籍全体の感想・学びをここにまとめましょう"
             className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
           />
+          <ImageUploader
+            bookId={book.id}
+            existingImages={bookImages}
+            onImagesChange={handleImagesChange}
+          />
           {error && <p className="text-sm text-red-600">{error}</p>}
           <div className="flex gap-3">
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="flex-1 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
-            >
+            <button onClick={handleSave} disabled={saving}
+              className="flex-1 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors">
               {saving ? '保存中…' : '保存'}
             </button>
-            <button
-              onClick={handleCancel}
-              className="flex-1 py-2 border border-gray-300 text-gray-600 text-sm font-medium rounded-md hover:bg-gray-50 transition-colors"
-            >
+            <button onClick={handleCancel}
+              className="flex-1 py-2 border border-gray-300 text-gray-600 text-sm font-medium rounded-md hover:bg-gray-50 transition-colors">
               キャンセル
             </button>
           </div>
@@ -249,25 +271,41 @@ function SummaryTab({ book, onBookUpdated }) {
       ) : (
         <div>
           <div className="flex justify-end mb-3">
-            <button
-              onClick={() => setEditing(true)}
-              className="text-sm px-4 py-1.5 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 transition-colors"
-            >
-              編集
-            </button>
+            <button onClick={() => setEditing(true)}
+              className="text-sm px-4 py-1.5 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 transition-colors">編集</button>
           </div>
+
           {book.summary ? (
-            <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed bg-white rounded-lg border border-gray-200 p-4">
+            <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed bg-white rounded-lg border border-gray-200 p-4 mb-4">
               {book.summary}
             </p>
           ) : (
-            <div className="text-center py-16">
+            <div className="text-center py-10 mb-4">
               <p className="text-3xl mb-3">📄</p>
               <p className="text-sm text-gray-500">まとめはまだありません</p>
             </div>
           )}
+
+          {/* 画像サムネ一覧（表示モード） */}
+          {!imagesLoading && bookImages.length > 0 && (
+            <div className="flex gap-3 overflow-x-auto pb-2">
+              {bookImages.map(img => (
+                <div
+                  key={img.id || img.storage_path}
+                  className="flex-shrink-0 w-28 h-28 rounded-lg overflow-hidden bg-gray-100 cursor-pointer border border-gray-200 hover:border-blue-400 transition-colors"
+                  onClick={() => setModalUrl(fullUrl(img.storage_path))}
+                >
+                  <img src={thumbUrl(img.storage_path)} alt={img.caption || ''}
+                    className="w-full h-full object-cover"
+                    onError={e => { e.currentTarget.style.display = 'none' }} />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
+
+      {modalUrl && <ImageModal url={modalUrl} onClose={() => setModalUrl(null)} />}
     </div>
   )
 }
@@ -296,9 +334,7 @@ export default function BookDetail() {
 
   const handleStatusChange = async (newStatus) => {
     const updates = { status: newStatus }
-    if (newStatus === '読書中' && !book.started_at) {
-      updates.started_at = today()
-    }
+    if (newStatus === '読書中' && !book.started_at) updates.started_at = today()
     if (newStatus === '読了' && !book.finished_at) {
       updates.finished_at = today()
       if (!book.started_at) updates.started_at = today()
@@ -345,20 +381,15 @@ export default function BookDetail() {
   if (error || !book) return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-4">
       <p className="text-red-500">{error || '書籍が見つかりません'}</p>
-      <button onClick={() => navigate('/dashboard')} className="text-sm text-blue-600 underline">
-        一覧へ戻る
-      </button>
+      <button onClick={() => navigate('/dashboard')} className="text-sm text-blue-600 underline">一覧へ戻る</button>
     </div>
   )
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* ヘッダー */}
       <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4 flex items-center gap-3">
-        <button
-          onClick={() => navigate('/dashboard')}
-          className="text-gray-500 hover:text-gray-700 flex items-center gap-1 text-sm"
-        >
+        <button onClick={() => navigate('/dashboard')}
+          className="text-gray-500 hover:text-gray-700 flex items-center gap-1 text-sm">
           <span>←</span> 戻る
         </button>
         <h1 className="text-base font-semibold text-gray-800 truncate">{book.title}</h1>
@@ -369,15 +400,9 @@ export default function BookDetail() {
         <section className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
           <div className="flex gap-4">
             {book.cover_url ? (
-              <img
-                src={book.cover_url}
-                alt={book.title}
-                className="w-20 flex-shrink-0 object-cover rounded shadow"
-              />
+              <img src={book.cover_url} alt={book.title} className="w-20 flex-shrink-0 object-cover rounded shadow" />
             ) : (
-              <div className="w-20 h-28 flex-shrink-0 bg-gray-100 rounded flex items-center justify-center text-3xl">
-                📖
-              </div>
+              <div className="w-20 h-28 flex-shrink-0 bg-gray-100 rounded flex items-center justify-center text-3xl">📖</div>
             )}
             <div className="flex-1 min-w-0">
               <h2 className="text-lg font-semibold text-gray-800 leading-snug mb-1">{book.title}</h2>
@@ -391,35 +416,24 @@ export default function BookDetail() {
         <section className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 space-y-4">
           <div className="flex items-center gap-3">
             <label className="text-sm font-medium text-gray-600 flex-shrink-0">ステータス</label>
-            <select
-              value={book.status}
-              onChange={e => handleStatusChange(e.target.value)}
-              disabled={statusSaving}
-              className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white disabled:opacity-60"
-            >
-              {STATUS_OPTIONS.map(s => (
-                <option key={s} value={s}>{s}</option>
-              ))}
+            <select value={book.status} onChange={e => handleStatusChange(e.target.value)} disabled={statusSaving}
+              className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white disabled:opacity-60">
+              {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
             <span className={`ml-1 text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[book.status] ?? ''}`}>
               {book.status}
             </span>
           </div>
-
           <div className="flex items-center gap-3">
             <div className="flex-1 text-sm text-gray-600">
               {book.started_at || book.finished_at ? (
-                <span>
-                  {formatDate(book.started_at) ?? '?'} 〜 {formatDate(book.finished_at) ?? ''}
-                </span>
+                <span>{formatDate(book.started_at) ?? '?'} 〜 {formatDate(book.finished_at) ?? ''}</span>
               ) : (
                 <span className="text-gray-400">読書期間未設定</span>
               )}
             </div>
-            <button
-              onClick={() => setShowDateModal(true)}
-              className="text-xs px-3 py-1.5 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 transition-colors flex-shrink-0"
-            >
+            <button onClick={() => setShowDateModal(true)}
+              className="text-xs px-3 py-1.5 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 transition-colors flex-shrink-0">
               日付編集
             </button>
           </div>
@@ -429,48 +443,30 @@ export default function BookDetail() {
         <div>
           <div className="flex border-b border-gray-200 mb-4">
             {[['notes', 'メモ'], ['summary', 'まとめ']].map(([key, label]) => (
-              <button
-                key={key}
-                onClick={() => setActiveTab(key)}
+              <button key={key} onClick={() => setActiveTab(key)}
                 className={`px-5 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === key
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
+                  activeTab === key ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}>
                 {label}
               </button>
             ))}
           </div>
-
-          {activeTab === 'notes' && (
-            <NotesTab bookId={id} navigate={navigate} />
-          )}
-          {activeTab === 'summary' && (
-            <SummaryTab book={book} onBookUpdated={setBook} />
-          )}
+          {activeTab === 'notes'   && <NotesTab bookId={id} navigate={navigate} />}
+          {activeTab === 'summary' && <SummaryTab book={book} onBookUpdated={setBook} />}
         </div>
 
         {/* 書籍削除 */}
         <section className="pt-2 pb-8">
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="w-full py-2.5 border border-red-300 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors"
-          >
+          <button onClick={handleDelete} disabled={deleting}
+            className="w-full py-2.5 border border-red-300 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors">
             {deleting ? '削除中…' : '書籍を削除'}
           </button>
         </section>
       </main>
 
-      {/* 日付編集モーダル */}
       {showDateModal && (
-        <DateModal
-          startedAt={book.started_at}
-          finishedAt={book.finished_at}
-          onSave={handleDateSave}
-          onClose={() => setShowDateModal(false)}
-        />
+        <DateModal startedAt={book.started_at} finishedAt={book.finished_at}
+          onSave={handleDateSave} onClose={() => setShowDateModal(false)} />
       )}
     </div>
   )

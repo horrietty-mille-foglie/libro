@@ -75,13 +75,21 @@ export async function updateBook(bookId, updates) {
 export async function fetchNotesByBookId(bookId) {
   const { data, error } = await supabase
     .from('libro_notes')
-    .select('*')
+    .select(`
+      *,
+      tags:libro_note_tags(
+        tag:libro_tags(id, name)
+      )
+    `)
     .eq('book_id', bookId)
     .order('chapter', { ascending: true, nullsFirst: true })
     .order('page', { ascending: true, nullsFirst: true })
     .order('created_at', { ascending: true })
   if (error) throw error
-  return data || []
+  return (data || []).map(note => ({
+    ...note,
+    tags: (note.tags || []).map(t => t.tag).filter(Boolean),
+  }))
 }
 
 export async function fetchNoteById(noteId) {
@@ -123,5 +131,139 @@ export async function deleteNote(noteId) {
     .from('libro_notes')
     .delete()
     .eq('id', noteId)
+  if (error) throw error
+}
+
+// ── タグ ──────────────────────────────────────────────────────
+
+export async function fetchTags() {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('未ログインです')
+
+  const { data, error } = await supabase
+    .from('libro_tags')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('name', { ascending: true })
+  if (error) throw error
+  return data || []
+}
+
+export async function createTag(name) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('未ログインです')
+
+  // UNIQUE(user_id, name) 制約があるため upsert で重複時は既存を返す
+  const { data, error } = await supabase
+    .from('libro_tags')
+    .upsert({ user_id: user.id, name: name.trim() }, { onConflict: 'user_id,name' })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function fetchNoteTagsByNoteId(noteId) {
+  const { data, error } = await supabase
+    .from('libro_note_tags')
+    .select('tag_id')
+    .eq('note_id', noteId)
+  if (error) throw error
+  return (data || []).map(r => r.tag_id)
+}
+
+export async function updateNoteTags(noteId, tagIds) {
+  const { error: delErr } = await supabase
+    .from('libro_note_tags')
+    .delete()
+    .eq('note_id', noteId)
+  if (delErr) throw delErr
+
+  if (tagIds.length === 0) return
+
+  const rows = tagIds.map(tag_id => ({ note_id: noteId, tag_id }))
+  const { error: insErr } = await supabase.from('libro_note_tags').insert(rows)
+  if (insErr) throw insErr
+}
+
+// ── メモ画像 ──────────────────────────────────────────────────
+
+export async function fetchNoteImages(noteId) {
+  const { data, error } = await supabase
+    .from('libro_note_images')
+    .select('*')
+    .eq('note_id', noteId)
+    .order('display_order', { ascending: true })
+  if (error) throw error
+  return data || []
+}
+
+export async function createNoteImage(noteImageData) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('未ログインです')
+
+  const { data, error } = await supabase
+    .from('libro_note_images')
+    .insert({ ...noteImageData, user_id: user.id })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateNoteImageCaption(imageId, caption) {
+  const { data, error } = await supabase
+    .from('libro_note_images')
+    .update({ caption })
+    .eq('id', imageId)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteNoteImage(imageId) {
+  const { error } = await supabase.from('libro_note_images').delete().eq('id', imageId)
+  if (error) throw error
+}
+
+// ── 書籍画像 ──────────────────────────────────────────────────
+
+export async function fetchBookImages(bookId) {
+  const { data, error } = await supabase
+    .from('libro_book_images')
+    .select('*')
+    .eq('book_id', bookId)
+    .order('display_order', { ascending: true })
+  if (error) throw error
+  return data || []
+}
+
+export async function createBookImage(bookImageData) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('未ログインです')
+
+  const { data, error } = await supabase
+    .from('libro_book_images')
+    .insert({ ...bookImageData, user_id: user.id })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateBookImageCaption(imageId, caption) {
+  const { data, error } = await supabase
+    .from('libro_book_images')
+    .update({ caption })
+    .eq('id', imageId)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteBookImage(imageId) {
+  const { error } = await supabase.from('libro_book_images').delete().eq('id', imageId)
   if (error) throw error
 }

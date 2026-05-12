@@ -1,6 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { fetchNoteById, createNote, updateNote } from '../lib/api'
+import {
+  fetchNoteById, createNote, updateNote,
+  fetchNoteTagsByNoteId, updateNoteTags,
+  fetchNoteImages, createNoteImage, deleteNoteImage,
+} from '../lib/api'
+import { deleteImage } from '../lib/storage'
+import TagInput from '../components/TagInput'
+import ImageUploader from '../components/ImageUploader'
 
 export default function NoteEditor() {
   const { bookId, noteId } = useParams()
@@ -8,6 +15,10 @@ export default function NoteEditor() {
   const isEdit = Boolean(noteId)
 
   const [form, setForm] = useState({ chapter: '', page: '', quote: '', thought: '' })
+  const [selectedTagIds, setSelectedTagIds] = useState([])
+  const [images, setImages] = useState([])           // {id, storage_path, caption, display_order, _isNew?}
+  const [deletedImageIds, setDeletedImageIds] = useState([]) // 既存画像の削除キュー(DBのid)
+
   const [loading, setLoading] = useState(isEdit)
   const [loadError, setLoadError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -16,14 +27,20 @@ export default function NoteEditor() {
 
   useEffect(() => {
     if (!isEdit) return
-    fetchNoteById(noteId)
-      .then(note => {
+    Promise.all([
+      fetchNoteById(noteId),
+      fetchNoteTagsByNoteId(noteId),
+      fetchNoteImages(noteId),
+    ])
+      .then(([note, tagIds, imgs]) => {
         setForm({
           chapter: note.chapter || '',
           page:    note.page != null ? String(note.page) : '',
           quote:   note.quote || '',
           thought: note.thought || '',
         })
+        setSelectedTagIds(tagIds)
+        setImages(imgs)
       })
       .catch(() => setLoadError('メモの読み込みに失敗しました'))
       .finally(() => setLoading(false))
@@ -32,6 +49,18 @@ export default function NoteEditor() {
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }))
     setValidationError('')
+  }
+
+  // ImageUploader からの変更通知
+  // 既存画像が消えた場合は削除キューに積む
+  const handleImagesChange = (nextImages) => {
+    if (isEdit) {
+      const prevIds = images.filter(i => i.id).map(i => i.id)
+      const nextIds = nextImages.filter(i => i.id).map(i => i.id)
+      const removed = prevIds.filter(id => !nextIds.includes(id))
+      setDeletedImageIds(prev => [...new Set([...prev, ...removed])])
+    }
+    setImages(nextImages)
   }
 
   const handleSubmit = async (e) => {
@@ -50,11 +79,32 @@ export default function NoteEditor() {
         quote:   form.quote.trim() || null,
         thought: form.thought.trim() || null,
       }
+
+      let savedNoteId = noteId
       if (isEdit) {
         await updateNote(noteId, payload)
       } else {
-        await createNote(payload)
+        const created = await createNote(payload)
+        savedNoteId = created.id
       }
+
+      // タグ更新
+      await updateNoteTags(savedNoteId, selectedTagIds)
+
+      // 削除された既存画像を DB から削除（Storage は ImageUploader 側で削除済み）
+      await Promise.all(deletedImageIds.map(id => deleteNoteImage(id)))
+
+      // 新規アップロード画像を DB に登録
+      const newImages = images.filter(img => img._isNew)
+      await Promise.all(newImages.map((img, i) =>
+        createNoteImage({
+          note_id: savedNoteId,
+          storage_path: img.storage_path,
+          caption: img.caption || null,
+          display_order: images.filter(x => !x._isNew).length + i,
+        })
+      ))
+
       navigate(`/books/${bookId}`)
     } catch {
       setSaveError('保存に失敗しました。再度お試しください')
@@ -140,6 +190,17 @@ export default function NoteEditor() {
               className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
             />
           </div>
+
+          <TagInput
+            selectedTagIds={selectedTagIds}
+            onChange={setSelectedTagIds}
+          />
+
+          <ImageUploader
+            bookId={bookId}
+            existingImages={images}
+            onImagesChange={handleImagesChange}
+          />
 
           {validationError && (
             <p className="text-sm text-red-600">{validationError}</p>
