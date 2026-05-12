@@ -43,7 +43,15 @@ export async function lookupByISBN(isbn) {
   const normalized = normalizeISBN(isbn)
 
   const openbd = await lookupOpenBD(normalized)
-  if (openbd && openbd.title) return openbd
+  if (openbd && openbd.title) {
+    if (!openbd.cover_url) {
+      try {
+        const google = await lookupGoogleBooks(normalized)
+        if (google?.cover_url) openbd.cover_url = google.cover_url
+      } catch {}
+    }
+    return openbd
+  }
 
   const google = await lookupGoogleBooks(normalized)
   if (google && google.title) return google
