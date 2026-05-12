@@ -2,9 +2,13 @@
 -- Libro 初期スキーマ
 -- ============================================================
 -- 7 テーブル + インデックス + updated_at トリガー + RLS ポリシー
--- + Storage バケット (libro-images) + Storage RLS
+-- + Storage バケット (libro-images) 作成
 --
 -- 実行方法: Supabase ダッシュボード > SQL Editor に貼り付けて Run
+--
+-- 注意: Storage バケットの RLS ポリシーは SQL Editor からは設定不可。
+-- SQL 実行後、ダッシュボードの Storage > libro-images > Policies タブ
+-- から GUI で設定すること（supabase/README.md の手順を参照）。
 -- ============================================================
 
 
@@ -247,39 +251,8 @@ CREATE POLICY "libro_user_settings_owner" ON libro_user_settings
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('libro-images', 'libro-images', false);
 
--- Storage RLS: libro-images バケットへのアクセス制御
--- ファイルパスの第1セグメントが auth.uid() と一致する場合のみ許可
--- 想定パス例: {user_id}/{book_id}/{uuid}.jpg
-
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "libro_images_select" ON storage.objects
-  FOR SELECT TO authenticated
-  USING (
-    bucket_id = 'libro-images'
-    AND (storage.foldername(name))[1] = auth.uid()::text
-  );
-
-CREATE POLICY "libro_images_insert" ON storage.objects
-  FOR INSERT TO authenticated
-  WITH CHECK (
-    bucket_id = 'libro-images'
-    AND (storage.foldername(name))[1] = auth.uid()::text
-  );
-
-CREATE POLICY "libro_images_update" ON storage.objects
-  FOR UPDATE TO authenticated
-  USING (
-    bucket_id = 'libro-images'
-    AND (storage.foldername(name))[1] = auth.uid()::text
-  );
-
-CREATE POLICY "libro_images_delete" ON storage.objects
-  FOR DELETE TO authenticated
-  USING (
-    bucket_id = 'libro-images'
-    AND (storage.foldername(name))[1] = auth.uid()::text
-  );
+-- Storage RLS ポリシーは GUI で設定すること。
+-- 設定内容の参考: supabase/migrations/20260512_libro_storage_policies_reference.sql
 
 
 -- ============================================================
