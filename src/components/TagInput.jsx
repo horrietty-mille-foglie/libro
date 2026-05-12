@@ -35,9 +35,7 @@ export default function TagInput({ selectedTagIds, onChange }) {
         if (prev.find(t => t.id === tag.id)) return prev
         return [...prev, tag].sort((a, b) => a.name.localeCompare(b.name, 'ja'))
       })
-      if (!selectedTagIds.includes(tag.id)) {
-        onChange([...selectedTagIds, tag.id])
-      }
+      if (!selectedTagIds.includes(tag.id)) onChange([...selectedTagIds, tag.id])
       setInputValue('')
       setAdding(false)
     } catch {
@@ -54,7 +52,7 @@ export default function TagInput({ selectedTagIds, onChange }) {
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">タグ</label>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">タグ</label>
       <div className="flex flex-wrap gap-2 items-center">
         {allTags.map(tag => {
           const selected = selectedTagIds.includes(tag.id)
@@ -66,7 +64,7 @@ export default function TagInput({ selectedTagIds, onChange }) {
               className={`text-xs px-3 py-1 rounded-full font-medium transition-colors ${
                 selected
                   ? 'bg-blue-600 text-white hover:bg-blue-700'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
               {tag.name}
@@ -85,15 +83,15 @@ export default function TagInput({ selectedTagIds, onChange }) {
               onBlur={handleAddTag}
               disabled={creating}
               placeholder="タグ名"
-              className="border border-blue-400 rounded-full px-3 py-1 text-xs focus:outline-none w-28"
+              className="border border-blue-400 dark:border-blue-500 rounded-full px-3 py-1 text-xs bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none w-28"
             />
-            {creating && <span className="text-xs text-gray-400">作成中…</span>}
+            {creating && <span className="text-xs text-gray-400 dark:text-gray-500">作成中…</span>}
           </div>
         ) : (
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="text-xs px-3 py-1 rounded-full border border-dashed border-gray-300 text-gray-500 hover:border-blue-400 hover:text-blue-500 transition-colors"
+            className="text-xs px-3 py-1 rounded-full border border-dashed border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-blue-400 hover:text-blue-500 transition-colors"
           >
             + 新しいタグ
           </button>

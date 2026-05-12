@@ -8,6 +8,17 @@
 |---|---|
 | `migrations/20260512_libro_init_schema.sql` | 第1-B: 初期スキーマ（7テーブル + RLS + バケット作成）**← SQL Editor で実行** |
 | `migrations/20260512_libro_storage_policies_reference.sql` | Storage ポリシー定義（参考用・実行不要）|
+| `migrations/20260513_libro_theme_default_light.sql` | 第2-C: `libro_user_settings.theme` のデフォルト値を `'light'` に変更 **← SQL Editor で実行** |
+
+---
+
+## 第2-C マイグレーションの適用手順
+
+1. [Supabase ダッシュボード](https://supabase.com/dashboard) にログイン
+2. プロジェクト **mille-foglie-law** を選択
+3. 左メニューから **SQL Editor** を開く
+4. `migrations/20260513_libro_theme_default_light.sql` の内容を貼り付け
+5. **Run** ボタンをクリックして実行
 
 ---
 

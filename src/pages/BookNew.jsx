@@ -10,11 +10,7 @@ export default function BookNew() {
   const [isbn, setIsbn] = useState('')
   const [lookupState, setLookupState] = useState('idle') // idle | loading | found | notfound | error
   const [form, setForm] = useState({
-    title: '',
-    author: '',
-    publisher: '',
-    cover_url: '',
-    status: '積読',
+    title: '', author: '', publisher: '', cover_url: '', status: '積読',
   })
   const [submitError, setSubmitError] = useState('')
   const [titleError, setTitleError] = useState('')
@@ -27,10 +23,7 @@ export default function BookNew() {
     setSubmitError('')
     try {
       const result = await lookupByISBN(isbn)
-      if (!result) {
-        setLookupState('notfound')
-        return
-      }
+      if (!result) { setLookupState('notfound'); return }
       setForm(prev => ({
         ...prev,
         title: result.title || '',
@@ -51,10 +44,7 @@ export default function BookNew() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!form.title.trim()) {
-      setTitleError('タイトルは必須です')
-      return
-    }
+    if (!form.title.trim()) { setTitleError('タイトルは必須です'); return }
     setSubmitting(true)
     setSubmitError('')
     try {
@@ -75,15 +65,15 @@ export default function BookNew() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
-        <h1 className="text-xl font-semibold text-gray-800">本を登録</h1>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+        <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">本を登録</h1>
       </header>
 
       <main className="max-w-xl mx-auto px-4 py-8">
         {/* ISBN 検索 */}
-        <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-3">
+        <section className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+          <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-3">
             ISBN から自動取得
           </h2>
           <div className="flex gap-2">
@@ -93,7 +83,7 @@ export default function BookNew() {
               onChange={e => setIsbn(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleLookup()}
               placeholder="例: 9784004310235"
-              className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button
               type="button"
@@ -104,45 +94,34 @@ export default function BookNew() {
               {lookupState === 'loading' ? '取得中…' : '自動取得'}
             </button>
           </div>
-          <p className="text-xs text-gray-400 mt-2">
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
             動作確認用 ISBN 例: 9784004310235（岩波新書）、9784065132111（講談社）
           </p>
           {lookupState === 'notfound' && (
-            <p className="mt-2 text-sm text-amber-600">
-              書誌情報が見つかりませんでした。手動入力してください
-            </p>
+            <p className="mt-2 text-sm text-amber-600">書誌情報が見つかりませんでした。手動入力してください</p>
           )}
           {lookupState === 'error' && (
-            <p className="mt-2 text-sm text-red-600">
-              通信エラーが発生しました。再度お試しください
-            </p>
+            <p className="mt-2 text-sm text-red-600">通信エラーが発生しました。再度お試しください</p>
           )}
           {lookupState === 'found' && (
-            <p className="mt-2 text-sm text-green-600">
-              書誌情報を取得しました。内容を確認して登録してください
-            </p>
+            <p className="mt-2 text-sm text-green-600">書誌情報を取得しました。内容を確認して登録してください</p>
           )}
         </section>
 
-        {/* 書影プレビュー */}
         {form.cover_url && (
           <div className="flex justify-center mb-6">
-            <img
-              src={form.cover_url}
-              alt="書影"
-              className="h-40 object-contain rounded shadow"
-            />
+            <img src={form.cover_url} alt="書影" className="h-40 object-contain rounded shadow" />
           </div>
         )}
 
         {/* 登録フォーム */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-1">
+        <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-4">
+          <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">
             書籍情報
           </h2>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               タイトル <span className="text-red-500">*</span>
             </label>
             <input
@@ -150,51 +129,45 @@ export default function BookNew() {
               value={form.title}
               onChange={e => handleChange('title', e.target.value)}
               placeholder="書籍タイトル"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            {titleError && (
-              <p className="mt-1 text-xs text-red-600">{titleError}</p>
-            )}
+            {titleError && <p className="mt-1 text-xs text-red-600">{titleError}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">著者</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">著者</label>
             <input
               type="text"
               value={form.author}
               onChange={e => handleChange('author', e.target.value)}
               placeholder="著者名"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">出版社</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">出版社</label>
             <input
               type="text"
               value={form.publisher}
               onChange={e => handleChange('publisher', e.target.value)}
               placeholder="出版社"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">ステータス</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">ステータス</label>
             <select
               value={form.status}
               onChange={e => handleChange('status', e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              {STATUS_OPTIONS.map(s => (
-                <option key={s} value={s}>{s}</option>
-              ))}
+              {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
 
-          {submitError && (
-            <p className="text-sm text-red-600">{submitError}</p>
-          )}
+          {submitError && <p className="text-sm text-red-600">{submitError}</p>}
 
           <div className="flex gap-3 pt-2">
             <button
@@ -207,7 +180,7 @@ export default function BookNew() {
             <button
               type="button"
               onClick={() => navigate('/dashboard')}
-              className="flex-1 py-2 border border-gray-300 text-gray-600 text-sm font-medium rounded-md hover:bg-gray-50 transition-colors"
+              className="flex-1 py-2 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               キャンセル
             </button>

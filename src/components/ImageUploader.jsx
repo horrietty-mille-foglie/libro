@@ -116,7 +116,6 @@ export default function ImageUploader({ bookId, existingImages, onImagesChange }
 
   const handleThumbClick = async (storage_path) => {
     try {
-      // 原寸は毎回新しい signed URL を生成（モーダル表示直前）
       const url = await getSignedImageUrl(storage_path)
       setModalUrl(url)
     } catch {
@@ -126,7 +125,7 @@ export default function ImageUploader({ bookId, existingImages, onImagesChange }
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">画像</label>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">画像</label>
 
       {existingImages.length > 0 && (
         <div className="flex gap-3 overflow-x-auto pb-2 mb-3">
@@ -135,7 +134,7 @@ export default function ImageUploader({ bookId, existingImages, onImagesChange }
             return (
               <div key={img.storage_path} className="flex-shrink-0 w-28">
                 <div
-                  className="w-28 h-28 rounded-lg overflow-hidden bg-gray-100 cursor-pointer border border-gray-200 hover:border-blue-400 transition-colors flex items-center justify-center"
+                  className="w-28 h-28 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 cursor-pointer border border-gray-200 dark:border-gray-600 hover:border-blue-400 transition-colors flex items-center justify-center"
                   onClick={() => handleThumbClick(img.storage_path)}
                 >
                   {urls?.thumb ? (
@@ -145,7 +144,7 @@ export default function ImageUploader({ bookId, existingImages, onImagesChange }
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <span className="text-xs text-gray-400 animate-pulse">読込中</span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500 animate-pulse">読込中</span>
                   )}
                 </div>
                 <input
@@ -153,12 +152,12 @@ export default function ImageUploader({ bookId, existingImages, onImagesChange }
                   value={img.caption || ''}
                   onChange={e => handleCaptionChange(i, e.target.value)}
                   placeholder="キャプション"
-                  className="mt-1 w-full text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  className="mt-1 w-full text-xs border border-gray-200 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-400"
                 />
                 <button
                   type="button"
                   onClick={() => handleDelete(i)}
-                  className="mt-1 w-full text-xs text-red-500 hover:text-red-700 text-center"
+                  className="mt-1 w-full text-xs text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-center"
                 >
                   削除
                 </button>
@@ -173,12 +172,12 @@ export default function ImageUploader({ bookId, existingImages, onImagesChange }
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={processing}
-          className="text-xs px-4 py-2 border border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-blue-400 hover:text-blue-500 disabled:opacity-50 transition-colors"
+          className="text-xs px-4 py-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-500 dark:text-gray-400 hover:border-blue-400 hover:text-blue-500 disabled:opacity-50 transition-colors"
         >
           {processing ? '処理中…' : '+ 画像追加'}
         </button>
         {processing && (
-          <span className="text-xs text-gray-400 animate-pulse">HEIC変換・圧縮中…</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500 animate-pulse">HEIC変換・圧縮中…</span>
         )}
       </div>
 

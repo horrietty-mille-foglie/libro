@@ -267,3 +267,83 @@ export async function deleteBookImage(imageId) {
   const { error } = await supabase.from('libro_book_images').delete().eq('id', imageId)
   if (error) throw error
 }
+
+// ── ユーザー設定 ──────────────────────────────────────────────
+
+export async function fetchUserSettings() {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('未ログインです')
+
+  const { data, error } = await supabase
+    .from('libro_user_settings')
+    .select('*')
+    .eq('user_id', user.id)
+    .single()
+
+  if (error) {
+    if (error.code === 'PGRST116') return null  // レコードなし
+    throw error
+  }
+  return data
+}
+
+export async function upsertUserSettings(settings) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('未ログインです')
+
+  const { data, error } = await supabase
+    .from('libro_user_settings')
+    .upsert({ user_id: user.id, ...settings }, { onConflict: 'user_id' })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+// ── 全文検索 ──────────────────────────────────────────────────
+
+export async function searchAll(query) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('未ログインです')
+
+  const pattern = `%${query}%`
+
+  const [booksResult, notesResult, tagsResult] = await Promise.all([
+    supabase
+      .from('libro_books')
+      .select('*')
+      .eq('user_id', user.id)
+      .or(`title.ilike.${pattern},author.ilike.${pattern},publisher.ilike.${pattern}`)
+      .order('created_at', { ascending: false }),
+
+    supabase
+      .from('libro_notes')
+      .select('*, book:libro_books(id, title, author, cover_url)')
+      .eq('user_id', user.id)
+      .or(`quote.ilike.${pattern},thought.ilike.${pattern}`)
+      .order('created_at', { ascending: false }),
+
+    supabase
+      .from('libro_tags')
+      .select(`
+        id, name,
+        note_tags:libro_note_tags(
+          note:libro_notes(id, quote, thought, book_id,
+            book:libro_books(id, title, author, cover_url)
+          )
+        )
+      `)
+      .eq('user_id', user.id)
+      .ilike('name', pattern),
+  ])
+
+  if (booksResult.error) throw booksResult.error
+  if (notesResult.error) throw notesResult.error
+  if (tagsResult.error) throw tagsResult.error
+
+  return {
+    books: booksResult.data || [],
+    notes: notesResult.data || [],
+    tagged_notes: tagsResult.data || [],
+  }
+}
