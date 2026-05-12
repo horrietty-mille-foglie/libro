@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { fetchBooks } from '../lib/api'
 import { useUserSettings } from '../contexts/UserSettingsContext'
+import BookCover from '../components/BookCover'
 
 const STATUS_FILTERS = ['すべて', '積読', '読書中', '読了']
 
@@ -19,11 +20,12 @@ function BookCardGrid({ book, onClick }) {
       className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
     >
       <div className="aspect-[2/3] bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
-        {book.cover_url ? (
-          <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-        ) : (
-          <span className="text-gray-300 dark:text-gray-500 text-4xl select-none">📖</span>
-        )}
+        <BookCover
+          coverUrl={book.cover_url}
+          alt={book.title}
+          imgClassName="w-full h-full object-cover"
+          placeholderClassName="text-gray-300 dark:text-gray-500 text-4xl select-none"
+        />
       </div>
       <div className="p-3">
         <p className="text-sm font-medium text-gray-800 dark:text-gray-100 line-clamp-2 leading-snug mb-1">
@@ -47,11 +49,12 @@ function BookRowList({ book, onClick }) {
       className="flex items-center gap-4 bg-white dark:bg-gray-800 px-4 py-3 border-b border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
     >
       <div className="w-10 h-14 flex-shrink-0 bg-gray-100 dark:bg-gray-700 rounded overflow-hidden flex items-center justify-center">
-        {book.cover_url ? (
-          <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-        ) : (
-          <span className="text-gray-300 dark:text-gray-500 text-lg">📖</span>
-        )}
+        <BookCover
+          coverUrl={book.cover_url}
+          alt={book.title}
+          imgClassName="w-full h-full object-cover"
+          placeholderClassName="text-gray-300 dark:text-gray-500 text-lg"
+        />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{book.title}</p>
@@ -162,7 +165,6 @@ export default function Dashboard() {
             ))}
           </div>
 
-          {/* グリッド/リスト切替 */}
           <div className="flex items-center gap-1 flex-shrink-0 ml-4">
             <button
               onClick={() => updateListViewMode('grid')}
@@ -196,11 +198,9 @@ export default function Dashboard() {
         {loading && (
           <p className="text-center text-gray-400 dark:text-gray-500 py-20">読み込み中…</p>
         )}
-
         {!loading && error && (
           <p className="text-center text-red-500 py-20">{error}</p>
         )}
-
         {!loading && !error && filteredBooks.length === 0 && (
           <div className="text-center py-20">
             <p className="text-4xl mb-4">📚</p>
@@ -216,28 +216,19 @@ export default function Dashboard() {
           viewMode === 'grid' ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {filteredBooks.map(book => (
-                <BookCardGrid
-                  key={book.id}
-                  book={book}
-                  onClick={() => navigate(`/books/${book.id}`)}
-                />
+                <BookCardGrid key={book.id} book={book} onClick={() => navigate(`/books/${book.id}`)} />
               ))}
             </div>
           ) : (
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
               {filteredBooks.map(book => (
-                <BookRowList
-                  key={book.id}
-                  book={book}
-                  onClick={() => navigate(`/books/${book.id}`)}
-                />
+                <BookRowList key={book.id} book={book} onClick={() => navigate(`/books/${book.id}`)} />
               ))}
             </div>
           )
         )}
       </main>
 
-      {/* フローティング「+」ボタン */}
       <button
         onClick={() => navigate('/books/new')}
         className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white text-2xl rounded-full shadow-lg hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center z-20 cursor-pointer"

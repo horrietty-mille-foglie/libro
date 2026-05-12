@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { searchAll } from '../lib/api'
+import BookCover from '../components/BookCover'
 
 function useDebounce(value, delay) {
   const [debounced, setDebounced] = useState(value)
@@ -87,11 +88,12 @@ export default function Search() {
                   className="flex items-center gap-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 cursor-pointer hover:shadow-sm transition-shadow"
                 >
                   <div className="w-10 h-14 flex-shrink-0 bg-gray-100 dark:bg-gray-700 rounded overflow-hidden flex items-center justify-center">
-                    {book.cover_url ? (
-                      <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-gray-300 dark:text-gray-500 text-lg">📖</span>
-                    )}
+                    <BookCover
+                      coverUrl={book.cover_url}
+                      alt={book.title}
+                      imgClassName="w-full h-full object-cover"
+                      placeholderClassName="text-gray-300 dark:text-gray-500 text-lg"
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{book.title}</p>

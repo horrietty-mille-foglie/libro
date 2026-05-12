@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { lookupByISBN } from '../lib/isbn'
 import { createBook } from '../lib/api'
+import { deleteImage } from '../lib/storage'
+import CoverUploader from '../components/CoverUploader'
 
 const STATUS_OPTIONS = ['積読', '読書中', '読了']
 
@@ -24,6 +26,11 @@ export default function BookNew() {
     try {
       const result = await lookupByISBN(isbn)
       if (!result) { setLookupState('notfound'); return }
+      // 手動アップロード済み書影(Storage path)があれば削除
+      const current = form.cover_url
+      if (current && !current.startsWith('http')) {
+        deleteImage(current).catch(() => {})
+      }
       setForm(prev => ({
         ...prev,
         title: result.title || '',
@@ -40,6 +47,10 @@ export default function BookNew() {
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }))
     if (field === 'title') setTitleError('')
+  }
+
+  const handleCoverChange = (url) => {
+    setForm(prev => ({ ...prev, cover_url: url || '' }))
   }
 
   const handleSubmit = async (e) => {
@@ -108,17 +119,21 @@ export default function BookNew() {
           )}
         </section>
 
-        {form.cover_url && (
-          <div className="flex justify-center mb-6">
-            <img src={form.cover_url} alt="書影" className="h-40 object-contain rounded shadow" />
-          </div>
-        )}
-
         {/* 登録フォーム */}
         <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-4">
           <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">
             書籍情報
           </h2>
+
+          {/* 表紙 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">表紙</label>
+            <CoverUploader
+              currentCoverUrl={form.cover_url || null}
+              bookId={null}
+              onCoverChange={handleCoverChange}
+            />
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

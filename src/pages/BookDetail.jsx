@@ -8,6 +8,7 @@ import {
 } from '../lib/api'
 import { deleteImage, getSignedImageUrl } from '../lib/storage'
 import ImageUploader from '../components/ImageUploader'
+import CoverUploader from '../components/CoverUploader'
 
 const STATUS_OPTIONS = ['積読', '読書中', '読了']
 
@@ -396,6 +397,15 @@ export default function BookDetail() {
     setShowDateModal(false)
   }
 
+  const handleCoverChange = async (newUrl) => {
+    try {
+      const updated = await updateBook(id, { cover_url: newUrl || null })
+      setBook(updated)
+    } catch {
+      alert('表紙の更新に失敗しました')
+    }
+  }
+
   const handleDelete = async () => {
     if (!window.confirm(`「${book.title}」を削除しますか？\n関連するメモもすべて削除されます。`)) return
     setDeleting(true)
@@ -435,11 +445,11 @@ export default function BookDetail() {
         {/* 書誌情報 */}
         <section className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-5">
           <div className="flex gap-4">
-            {book.cover_url ? (
-              <img src={book.cover_url} alt={book.title} className="w-20 flex-shrink-0 object-cover rounded shadow" />
-            ) : (
-              <div className="w-20 h-28 flex-shrink-0 bg-gray-100 dark:bg-gray-700 rounded flex items-center justify-center text-3xl">📖</div>
-            )}
+            <CoverUploader
+              currentCoverUrl={book.cover_url}
+              bookId={book.id}
+              onCoverChange={handleCoverChange}
+            />
             <div className="flex-1 min-w-0">
               <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 leading-snug mb-1">{book.title}</h2>
               {book.author    && <p className="text-sm text-gray-500 dark:text-gray-400 mb-0.5">{book.author}</p>}
