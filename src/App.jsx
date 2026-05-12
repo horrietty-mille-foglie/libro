@@ -3,6 +3,8 @@ import Login from './pages/Login'
 import AuthCallback from './pages/AuthCallback'
 import Dashboard from './pages/Dashboard'
 import BookNew from './pages/BookNew'
+import BookDetail from './pages/BookDetail'
+import NoteEditor from './pages/NoteEditor'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
@@ -14,6 +16,9 @@ function App() {
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/books/new" element={<ProtectedRoute><BookNew /></ProtectedRoute>} />
+        <Route path="/books/:id" element={<ProtectedRoute><BookDetail /></ProtectedRoute>} />
+        <Route path="/books/:bookId/notes/new" element={<ProtectedRoute><NoteEditor /></ProtectedRoute>} />
+        <Route path="/books/:bookId/notes/:noteId/edit" element={<ProtectedRoute><NoteEditor /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   )

@@ -104,7 +104,7 @@ export default function Dashboard() {
   }
 
   const handleBookClick = (book) => {
-    alert(`「${book.title}」の詳細画面は第2フェーズで実装予定です`)
+    navigate(`/books/${book.id}`)
   }
 
   const filteredBooks = activeFilter === 'すべて'
