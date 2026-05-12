@@ -92,6 +92,18 @@ export async function fetchNotesByBookId(bookId) {
   }))
 }
 
+export async function fetchLatestNoteByBookId(bookId) {
+  const { data, error } = await supabase
+    .from('libro_notes')
+    .select('chapter')
+    .eq('book_id', bookId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error) throw error
+  return data  // null or { chapter }
+}
+
 export async function fetchNoteById(noteId) {
   const { data, error } = await supabase
     .from('libro_notes')

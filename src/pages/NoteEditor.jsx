@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  fetchNoteById, createNote, updateNote,
+  fetchNoteById, fetchLatestNoteByBookId, createNote, updateNote,
   fetchNoteTagsByNoteId, updateNoteTags,
   fetchNoteImages, createNoteImage, deleteNoteImage,
 } from '../lib/api'
@@ -26,7 +26,14 @@ export default function NoteEditor() {
   const [saveError, setSaveError] = useState('')
 
   useEffect(() => {
-    if (!isEdit) return
+    if (!isEdit) {
+      fetchLatestNoteByBookId(bookId)
+        .then(latest => {
+          if (latest?.chapter) setForm(prev => ({ ...prev, chapter: latest.chapter }))
+        })
+        .catch(() => {})
+      return
+    }
     Promise.all([
       fetchNoteById(noteId),
       fetchNoteTagsByNoteId(noteId),
