@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 
 const BUCKET = 'libro-images'
+const SIGNED_URL_EXPIRES = 3600  // 1時間
 
 export async function uploadImage(blob, extension, bookId) {
   const { data: { user } } = await supabase.auth.getUser()
@@ -15,8 +16,7 @@ export async function uploadImage(blob, extension, bookId) {
 
   if (error) throw error
 
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(storage_path)
-  return { storage_path, public_url: data.publicUrl }
+  return { storage_path }
 }
 
 export async function deleteImage(storage_path) {
@@ -24,20 +24,23 @@ export async function deleteImage(storage_path) {
   if (error) throw error
 }
 
-export function getImageUrl(storage_path, options = {}) {
+// Private バケット用: 署名付き URL を生成（有効期限 1 時間）
+export async function getSignedImageUrl(storage_path, options = {}) {
   const { width, height } = options
 
+  const reqOptions = { expiresIn: SIGNED_URL_EXPIRES }
+
   if (width || height) {
-    const transform = {}
+    const transform = { resize: 'contain' }
     if (width)  transform.width  = width
     if (height) transform.height = height
-    transform.resize = 'contain'
-    const { data } = supabase.storage
-      .from(BUCKET)
-      .getPublicUrl(storage_path, { transform })
-    return data.publicUrl
+    reqOptions.transform = transform
   }
 
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(storage_path)
-  return data.publicUrl
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrl(storage_path, SIGNED_URL_EXPIRES, reqOptions)
+
+  if (error) throw error
+  return data.signedUrl
 }

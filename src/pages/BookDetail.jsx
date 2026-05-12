@@ -6,7 +6,7 @@ import {
   fetchBookImages, createBookImage, deleteBookImage,
   updateBookImageCaption,
 } from '../lib/api'
-import { deleteImage, getImageUrl } from '../lib/storage'
+import { deleteImage, getSignedImageUrl } from '../lib/storage'
 import ImageUploader from '../components/ImageUploader'
 
 const STATUS_OPTIONS = ['積読', '読書中', '読了']
@@ -185,6 +185,7 @@ function SummaryTab({ book, onBookUpdated }) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [modalUrl, setModalUrl] = useState(null)
+  const [signedUrls, setSignedUrls] = useState({})
 
   useEffect(() => {
     fetchBookImages(book.id)
@@ -192,6 +193,39 @@ function SummaryTab({ book, onBookUpdated }) {
       .catch(() => {})
       .finally(() => setImagesLoading(false))
   }, [book.id])
+
+  // storage_path の未解決エントリに署名付き URL を付与
+  useEffect(() => {
+    if (bookImages.length === 0) return
+    const unresolved = bookImages.filter(img => img.storage_path && !signedUrls[img.storage_path])
+    if (unresolved.length === 0) return
+
+    let cancelled = false
+    const resolve = async () => {
+      const entries = await Promise.all(
+        unresolved.map(async img => {
+          try {
+            const [thumb, full] = await Promise.all([
+              getSignedImageUrl(img.storage_path, { width: 200, height: 200 }),
+              getSignedImageUrl(img.storage_path),
+            ])
+            return [img.storage_path, { thumb, full }]
+          } catch {
+            return [img.storage_path, { thumb: '', full: '' }]
+          }
+        })
+      )
+      if (!cancelled) {
+        setSignedUrls(prev => {
+          const next = { ...prev }
+          entries.forEach(([path, urls]) => { next[path] = urls })
+          return next
+        })
+      }
+    }
+    resolve()
+    return () => { cancelled = true }
+  }, [bookImages]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleImagesChange = async (nextImages) => {
     setBookImages(nextImages)
@@ -237,8 +271,14 @@ function SummaryTab({ book, onBookUpdated }) {
     setBookImages(bookImages.filter(img => !img._isNew))
   }
 
-  const thumbUrl = (p) => getImageUrl(p, { width: 200, height: 200 })
-  const fullUrl  = (p) => getImageUrl(p)
+  const handleThumbClick = async (storage_path) => {
+    try {
+      const url = await getSignedImageUrl(storage_path)
+      setModalUrl(url)
+    } catch {
+      setError('画像URLの取得に失敗しました')
+    }
+  }
 
   return (
     <div>
@@ -289,17 +329,22 @@ function SummaryTab({ book, onBookUpdated }) {
           {/* 画像サムネ一覧（表示モード） */}
           {!imagesLoading && bookImages.length > 0 && (
             <div className="flex gap-3 overflow-x-auto pb-2">
-              {bookImages.map(img => (
-                <div
-                  key={img.id || img.storage_path}
-                  className="flex-shrink-0 w-28 h-28 rounded-lg overflow-hidden bg-gray-100 cursor-pointer border border-gray-200 hover:border-blue-400 transition-colors"
-                  onClick={() => setModalUrl(fullUrl(img.storage_path))}
-                >
-                  <img src={thumbUrl(img.storage_path)} alt={img.caption || ''}
-                    className="w-full h-full object-cover"
-                    onError={e => { e.currentTarget.style.display = 'none' }} />
-                </div>
-              ))}
+              {bookImages.map(img => {
+                const urls = signedUrls[img.storage_path]
+                return (
+                  <div
+                    key={img.id || img.storage_path}
+                    className="flex-shrink-0 w-28 h-28 rounded-lg overflow-hidden bg-gray-100 cursor-pointer border border-gray-200 hover:border-blue-400 transition-colors flex items-center justify-center"
+                    onClick={() => handleThumbClick(img.storage_path)}
+                  >
+                    {urls?.thumb ? (
+                      <img src={urls.thumb} alt={img.caption || ''} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-xs text-gray-400 animate-pulse">読込中</span>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>

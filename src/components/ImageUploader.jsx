@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { processImageFile } from '../lib/imageProcessing'
-import { uploadImage, deleteImage, getImageUrl } from '../lib/storage'
+import { uploadImage, deleteImage, getSignedImageUrl } from '../lib/storage'
 
 // ── 原寸モーダル ──────────────────────────────────────────────
 function ImageModal({ url, onClose }) {
@@ -29,6 +29,45 @@ export default function ImageUploader({ bookId, existingImages, onImagesChange }
   const [uploadError, setUploadError] = useState('')
   const [modalUrl, setModalUrl] = useState(null)
 
+  // storage_path → { thumb, full } の署名付き URL キャッシュ
+  const [signedUrls, setSignedUrls] = useState({})
+
+  // existingImages が変わるたびに未解決の storage_path の署名付き URL を取得
+  useEffect(() => {
+    if (existingImages.length === 0) return
+
+    const unresolved = existingImages.filter(
+      img => img.storage_path && !signedUrls[img.storage_path]
+    )
+    if (unresolved.length === 0) return
+
+    let cancelled = false
+    const resolve = async () => {
+      const entries = await Promise.all(
+        unresolved.map(async img => {
+          try {
+            const [thumb, full] = await Promise.all([
+              getSignedImageUrl(img.storage_path, { width: 200, height: 200 }),
+              getSignedImageUrl(img.storage_path),
+            ])
+            return [img.storage_path, { thumb, full }]
+          } catch {
+            return [img.storage_path, { thumb: '', full: '' }]
+          }
+        })
+      )
+      if (!cancelled) {
+        setSignedUrls(prev => {
+          const next = { ...prev }
+          entries.forEach(([path, urls]) => { next[path] = urls })
+          return next
+        })
+      }
+    }
+    resolve()
+    return () => { cancelled = true }
+  }, [existingImages])  // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -40,11 +79,11 @@ export default function ImageUploader({ bookId, existingImages, onImagesChange }
       const { blob, extension } = await processImageFile(file)
       const { storage_path } = await uploadImage(blob, extension, bookId)
       const newImage = {
-        id: null,        // DB 登録前は null、親側で createNoteImage/createBookImage 後に確定
+        id: null,
         storage_path,
         caption: '',
         display_order: existingImages.length,
-        _isNew: true,    // 新規アップロードフラグ（親側が DB 登録を担う）
+        _isNew: true,
       }
       onImagesChange([...existingImages, newImage])
     } catch (err) {
@@ -64,14 +103,26 @@ export default function ImageUploader({ bookId, existingImages, onImagesChange }
     if (!window.confirm('この画像を削除しますか？')) return
     try {
       await deleteImage(img.storage_path)
+      setSignedUrls(prev => {
+        const next = { ...prev }
+        delete next[img.storage_path]
+        return next
+      })
       onImagesChange(existingImages.filter((_, i) => i !== index))
     } catch {
       setUploadError('画像の削除に失敗しました')
     }
   }
 
-  const thumbUrl = (storage_path) => getImageUrl(storage_path, { width: 200, height: 200 })
-  const fullUrl  = (storage_path) => getImageUrl(storage_path)
+  const handleThumbClick = async (storage_path) => {
+    try {
+      // 原寸は毎回新しい signed URL を生成（モーダル表示直前）
+      const url = await getSignedImageUrl(storage_path)
+      setModalUrl(url)
+    } catch {
+      setUploadError('画像URLの取得に失敗しました')
+    }
+  }
 
   return (
     <div>
@@ -79,35 +130,41 @@ export default function ImageUploader({ bookId, existingImages, onImagesChange }
 
       {existingImages.length > 0 && (
         <div className="flex gap-3 overflow-x-auto pb-2 mb-3">
-          {existingImages.map((img, i) => (
-            <div key={img.storage_path} className="flex-shrink-0 w-28">
-              <div
-                className="w-28 h-28 rounded-lg overflow-hidden bg-gray-100 cursor-pointer border border-gray-200 hover:border-blue-400 transition-colors"
-                onClick={() => setModalUrl(fullUrl(img.storage_path))}
-              >
-                <img
-                  src={thumbUrl(img.storage_path)}
-                  alt={img.caption || ''}
-                  className="w-full h-full object-cover"
-                  onError={e => { e.currentTarget.style.display = 'none' }}
+          {existingImages.map((img, i) => {
+            const urls = signedUrls[img.storage_path]
+            return (
+              <div key={img.storage_path} className="flex-shrink-0 w-28">
+                <div
+                  className="w-28 h-28 rounded-lg overflow-hidden bg-gray-100 cursor-pointer border border-gray-200 hover:border-blue-400 transition-colors flex items-center justify-center"
+                  onClick={() => handleThumbClick(img.storage_path)}
+                >
+                  {urls?.thumb ? (
+                    <img
+                      src={urls.thumb}
+                      alt={img.caption || ''}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-xs text-gray-400 animate-pulse">読込中</span>
+                  )}
+                </div>
+                <input
+                  type="text"
+                  value={img.caption || ''}
+                  onChange={e => handleCaptionChange(i, e.target.value)}
+                  placeholder="キャプション"
+                  className="mt-1 w-full text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-400"
                 />
+                <button
+                  type="button"
+                  onClick={() => handleDelete(i)}
+                  className="mt-1 w-full text-xs text-red-500 hover:text-red-700 text-center"
+                >
+                  削除
+                </button>
               </div>
-              <input
-                type="text"
-                value={img.caption || ''}
-                onChange={e => handleCaptionChange(i, e.target.value)}
-                placeholder="キャプション"
-                className="mt-1 w-full text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-400"
-              />
-              <button
-                type="button"
-                onClick={() => handleDelete(i)}
-                className="mt-1 w-full text-xs text-red-500 hover:text-red-700 text-center"
-              >
-                削除
-              </button>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
@@ -121,9 +178,7 @@ export default function ImageUploader({ bookId, existingImages, onImagesChange }
           {processing ? '処理中…' : '+ 画像追加'}
         </button>
         {processing && (
-          <span className="text-xs text-gray-400 animate-pulse">
-            HEIC変換・圧縮中…
-          </span>
+          <span className="text-xs text-gray-400 animate-pulse">HEIC変換・圧縮中…</span>
         )}
       </div>
 
