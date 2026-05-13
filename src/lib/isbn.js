@@ -19,6 +19,16 @@ async function lookupOpenBD(isbn) {
   }
 }
 
+async function lookupOpenLibraryCover(isbn) {
+  try {
+    const url = `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg?default=false`
+    const res = await fetch(url, { method: 'HEAD' })
+    return res.ok ? url : null
+  } catch {
+    return null
+  }
+}
+
 async function lookupGoogleBooks(isbn) {
   const res = await fetch(
     `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`
@@ -43,7 +53,15 @@ export async function lookupByISBN(isbn) {
   const normalized = normalizeISBN(isbn)
 
   const openbd = await lookupOpenBD(normalized)
-  if (openbd && openbd.title) return openbd
+  if (openbd && openbd.title) {
+    if (!openbd.cover_url) {
+      try {
+        const olCover = await lookupOpenLibraryCover(normalized)
+        if (olCover) openbd.cover_url = olCover
+      } catch {}
+    }
+    return openbd
+  }
 
   const google = await lookupGoogleBooks(normalized)
   if (google && google.title) return google
