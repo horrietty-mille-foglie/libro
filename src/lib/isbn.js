@@ -29,6 +29,30 @@ async function lookupOpenLibraryCover(isbn) {
   }
 }
 
+async function lookupRakutenBooks(isbn) {
+  const appId = import.meta.env.VITE_RAKUTEN_APP_ID
+  if (!appId) {
+    console.warn('[ISBN] VITE_RAKUTEN_APP_ID が未設定です')
+    return null
+  }
+  try {
+    const url = `https://app.rakuten.co.jp/services/api/BooksBook/Search/20170404?applicationId=${appId}&isbn=${isbn}&format=json`
+    const res = await fetch(url)
+    if (!res.ok) return null
+    const json = await res.json()
+    const item = json?.Items?.[0]?.Item
+    if (!item) return null
+    return {
+      title:     item.title        || null,
+      author:    item.author       || null,
+      publisher: item.publisherName || null,
+      cover_url: item.largeImageUrl || null,
+    }
+  } catch {
+    return null
+  }
+}
+
 async function lookupGoogleBooks(isbn) {
   const res = await fetch(
     `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`
@@ -53,16 +77,31 @@ export async function lookupByISBN(isbn) {
   const normalized = normalizeISBN(isbn)
 
   const openbd = await lookupOpenBD(normalized)
+  console.log(`[ISBN] OpenBD: title=${openbd?.title ? 'found' : 'none'}, cover=${openbd?.cover_url ? 'yes' : 'no'}`)
   if (openbd && openbd.title) {
     if (!openbd.cover_url) {
       try {
-        const olCover = await lookupOpenLibraryCover(normalized)
-        if (olCover) openbd.cover_url = olCover
+        const rakuten = await lookupRakutenBooks(normalized)
+        if (rakuten?.cover_url) {
+          console.log('[ISBN] Rakuten: cover found')
+          openbd.cover_url = rakuten.cover_url
+        } else {
+          const olCover = await lookupOpenLibraryCover(normalized)
+          if (olCover) {
+            console.log('[ISBN] OpenLibrary: cover found')
+            openbd.cover_url = olCover
+          }
+        }
       } catch {}
     }
     return openbd
   }
 
+  console.log('[ISBN] Fallback to Rakuten')
+  const rakuten = await lookupRakutenBooks(normalized)
+  if (rakuten && rakuten.title) return rakuten
+
+  console.log('[ISBN] Fallback to Google Books')
   const google = await lookupGoogleBooks(normalized)
   if (google && google.title) return google
 
