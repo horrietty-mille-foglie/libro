@@ -30,15 +30,8 @@ async function lookupOpenLibraryCover(isbn) {
 }
 
 async function lookupRakutenBooks(isbn) {
-  const appId     = import.meta.env.VITE_RAKUTEN_APP_ID
-  const accessKey = import.meta.env.VITE_RAKUTEN_ACCESS_KEY
-  if (!appId || !accessKey) {
-    console.warn('[ISBN] VITE_RAKUTEN_APP_ID または VITE_RAKUTEN_ACCESS_KEY が未設定です')
-    return null
-  }
   try {
-    const url = `https://openapi.rakuten.co.jp/ichibams/api/BooksBook/Search/20170404?applicationId=${appId}&accessKey=${accessKey}&isbn=${isbn}&format=json`
-    const res = await fetch(url)
+    const res = await fetch('/api/rakuten-books?isbn=' + isbn)
     if (!res.ok) return null
     const json = await res.json()
     const item = json?.Items?.[0]?.Item
