@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   }
 
   const url =
-    `https://openapi.rakuten.co.jp/ichibams/api/BooksBook/Search/20170404` +
+    `https://openapi.rakuten.co.jp/services/api/BooksBook/Search/20170404` +
     `?applicationId=${appId}&accessKey=${accessKey}&isbn=${isbn}&format=json`
 
   try {
