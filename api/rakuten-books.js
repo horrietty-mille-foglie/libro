@@ -15,7 +15,11 @@ export default async function handler(req, res) {
     `?applicationId=${appId}&accessKey=${accessKey}&isbn=${isbn}&format=json`
 
   try {
-    const response = await fetch(url)
+    const response = await fetch(url, {
+      headers: {
+        'Referer': 'https://libro-app-mu.vercel.app'
+      }
+    })
     const data = await response.json()
     return res.status(response.status).json(data)
   } catch (err) {
