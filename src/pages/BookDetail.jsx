@@ -186,6 +186,8 @@ function SummaryTab({ book, onBookUpdated }) {
   const [error, setError] = useState('')
   const [modalUrl, setModalUrl] = useState(null)
   const [signedUrls, setSignedUrls] = useState({})
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState('')
 
   useEffect(() => {
     fetchBookImages(book.id)
@@ -225,6 +227,37 @@ function SummaryTab({ book, onBookUpdated }) {
     resolve()
     return () => { cancelled = true }
   }, [bookImages]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleAiOrganize = async () => {
+    if (book.summary) {
+      if (!window.confirm('現在のまとめを上書きします。よろしいですか？（保存するまで既存の内容は消えません）')) return
+    }
+    setAiError('')
+    setAiLoading(true)
+    try {
+      const notes = await fetchNotesByBookId(book.id)
+      if (!notes || notes.length === 0) {
+        setAiError('整理できるメモがありません')
+        return
+      }
+      const res = await fetch('/api/organize-notes', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          book: { title: book.title, author: book.author, publisher: book.publisher },
+          notes,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'AI生成に失敗しました')
+      setDraft(data.summary)
+      setEditing(true)
+    } catch (err) {
+      setAiError(err.message)
+    } finally {
+      setAiLoading(false)
+    }
+  }
 
   const handleImagesChange = async (nextImages) => {
     setBookImages(nextImages)
@@ -303,10 +336,17 @@ function SummaryTab({ book, onBookUpdated }) {
         </div>
       ) : (
         <div>
-          <div className="flex justify-end mb-3">
+          <div className="flex justify-end gap-2 mb-3">
+            <button
+              onClick={handleAiOrganize}
+              disabled={aiLoading}
+              className="text-sm px-4 py-1.5 border border-blue-300 dark:border-blue-700 rounded-md text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 disabled:opacity-50 transition-colors">
+              {aiLoading ? '整理中...' : 'AIで整理'}
+            </button>
             <button onClick={() => setEditing(true)}
               className="text-sm px-4 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">編集</button>
           </div>
+          {aiError && <p className="text-xs text-red-500 mb-3 text-right">{aiError}</p>}
 
           {book.summary ? (
             <p className="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-wrap leading-relaxed bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 mb-4">
