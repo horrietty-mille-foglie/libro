@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useUserSettings } from '../contexts/UserSettingsContext'
+import { supabase } from '../lib/supabase'
 
 const THEME_OPTIONS = [
   { value: 'light',  label: 'ライト' },
@@ -15,6 +17,27 @@ const VIEW_OPTIONS = [
 export default function Settings() {
   const navigate = useNavigate()
   const { settings, updateTheme, updateListViewMode } = useUserSettings()
+  const [newPassword, setNewPassword] = useState('')
+  const [passwordMsg, setPasswordMsg] = useState('')
+  const [passwordLoading, setPasswordLoading] = useState(false)
+
+  const handlePasswordUpdate = async (e) => {
+    e.preventDefault()
+    if (newPassword.length < 6) {
+      setPasswordMsg('6文字以上で入力してください')
+      return
+    }
+    setPasswordLoading(true)
+    setPasswordMsg('')
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    if (error) {
+      setPasswordMsg('パスワードの更新に失敗しました')
+    } else {
+      setPasswordMsg('パスワードを更新しました')
+      setNewPassword('')
+    }
+    setPasswordLoading(false)
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -65,6 +88,32 @@ export default function Settings() {
               </label>
             ))}
           </div>
+        </section>
+
+        <section className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-5">
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">パスワード設定</h2>
+          <form onSubmit={handlePasswordUpdate} className="space-y-3">
+            <input
+              type="password"
+              autoComplete="new-password"
+              placeholder="新しいパスワード（6文字以上）"
+              value={newPassword}
+              onChange={e => setNewPassword(e.target.value)}
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {passwordMsg && (
+              <p className={`text-xs ${passwordMsg.includes('更新しました') ? 'text-green-600' : 'text-red-500'}`}>
+                {passwordMsg}
+              </p>
+            )}
+            <button
+              type="submit"
+              disabled={passwordLoading || !newPassword}
+              className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {passwordLoading ? '更新中...' : 'パスワードを更新'}
+            </button>
+          </form>
         </section>
       </main>
     </div>
