@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { goBack } from '../lib/goBack'
 import { searchAll } from '../lib/api'
 import BookCover from '../components/BookCover'
 
@@ -45,7 +46,7 @@ export default function Search() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 flex items-center gap-3 sticky top-0 z-10">
         <button
-          onClick={() => navigate('/dashboard')}
+          onClick={() => goBack(navigate, '/dashboard')}
           className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 flex items-center gap-1 text-sm flex-shrink-0"
         >
           ← 戻る

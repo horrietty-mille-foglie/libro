@@ -6,6 +6,7 @@ import {
   fetchNoteImages, createNoteImage, deleteNoteImage,
 } from '../lib/api'
 import { deleteImage } from '../lib/storage'
+import { goBack } from '../lib/goBack'
 import TagInput from '../components/TagInput'
 import ImageUploader from '../components/ImageUploader'
 
@@ -106,7 +107,7 @@ export default function NoteEditor() {
         })
       ))
 
-      navigate(`/books/${bookId}`)
+      goBack(navigate, `/books/${bookId}`)
     } catch {
       setSaveError('保存に失敗しました。再度お試しください')
     } finally {
@@ -123,7 +124,7 @@ export default function NoteEditor() {
   if (loadError) return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-gray-50 dark:bg-gray-900">
       <p className="text-red-500">{loadError}</p>
-      <button onClick={() => navigate(`/books/${bookId}`)} className="text-sm text-blue-600 underline">
+      <button onClick={() => goBack(navigate, `/books/${bookId}`)} className="text-sm text-blue-600 underline">
         戻る
       </button>
     </div>
@@ -133,7 +134,7 @@ export default function NoteEditor() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 flex items-center gap-3">
         <button
-          onClick={() => navigate(`/books/${bookId}`)}
+          onClick={() => goBack(navigate, `/books/${bookId}`)}
           className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 flex items-center gap-1 text-sm"
         >
           <span>←</span> 戻る
@@ -209,7 +210,7 @@ export default function NoteEditor() {
             </button>
             <button
               type="button"
-              onClick={() => navigate(`/books/${bookId}`)}
+              onClick={() => goBack(navigate, `/books/${bookId}`)}
               className="flex-1 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               キャンセル

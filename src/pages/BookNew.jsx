@@ -4,6 +4,7 @@ import { lookupByISBN } from '../lib/isbn'
 import { createBook } from '../lib/api'
 import { deleteImage } from '../lib/storage'
 import { isApiAuthError, AUTH_ERROR_MESSAGE } from '../lib/authFetch'
+import { goBack } from '../lib/goBack'
 import CoverUploader from '../components/CoverUploader'
 
 const STATUS_OPTIONS = ['積読', '読書中', '読了']
@@ -68,7 +69,7 @@ export default function BookNew() {
         cover_url: form.cover_url.trim() || null,
         status: form.status,
       })
-      navigate('/dashboard')
+      goBack(navigate, '/dashboard')
     } catch {
       setSubmitError('登録に失敗しました。再度お試しください')
     } finally {
@@ -198,7 +199,7 @@ export default function BookNew() {
             </button>
             <button
               type="button"
-              onClick={() => navigate('/dashboard')}
+              onClick={() => goBack(navigate, '/dashboard')}
               className="flex-1 py-2 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               キャンセル

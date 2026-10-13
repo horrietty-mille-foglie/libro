@@ -8,6 +8,7 @@ import {
 } from '../lib/api'
 import { deleteImage, getSignedImageUrl } from '../lib/storage'
 import { authFetch, isApiAuthError, AUTH_ERROR_MESSAGE } from '../lib/authFetch'
+import { goBack } from '../lib/goBack'
 import ImageUploader from '../components/ImageUploader'
 import CoverUploader from '../components/CoverUploader'
 
@@ -452,7 +453,7 @@ export default function BookDetail() {
     setDeleting(true)
     try {
       await deleteBook(id)
-      navigate('/dashboard')
+      goBack(navigate, '/dashboard')
     } catch {
       alert('削除に失敗しました')
       setDeleting(false)
@@ -468,14 +469,14 @@ export default function BookDetail() {
   if (error || !book) return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-gray-50 dark:bg-gray-900">
       <p className="text-red-500">{error || '書籍が見つかりません'}</p>
-      <button onClick={() => navigate('/dashboard')} className="text-sm text-blue-600 underline">一覧へ戻る</button>
+      <button onClick={() => goBack(navigate, '/dashboard')} className="text-sm text-blue-600 underline">一覧へ戻る</button>
     </div>
   )
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 flex items-center gap-3">
-        <button onClick={() => navigate('/dashboard')}
+        <button onClick={() => goBack(navigate, '/dashboard')}
           className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 flex items-center gap-1 text-sm">
           <span>←</span> 戻る
         </button>

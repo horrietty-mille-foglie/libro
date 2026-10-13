@@ -12,7 +12,7 @@ export default function Login() {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession()
-      if (session) navigate('/dashboard')
+      if (session) navigate('/dashboard', { replace: true })
     }
     checkAuth()
   }, [navigate])
@@ -25,7 +25,7 @@ export default function Login() {
     if (error) {
       setError('メールアドレスまたはパスワードが正しくありません')
     } else {
-      navigate('/dashboard')
+      navigate('/dashboard', { replace: true })
     }
     setLoading(false)
   }

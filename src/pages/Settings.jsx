@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { goBack } from '../lib/goBack'
 import { useUserSettings } from '../contexts/UserSettingsContext'
 import { supabase } from '../lib/supabase'
 
@@ -43,7 +44,7 @@ export default function Settings() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 flex items-center gap-3">
         <button
-          onClick={() => navigate('/dashboard')}
+          onClick={() => goBack(navigate, '/dashboard')}
           className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 flex items-center gap-1 text-sm"
         >
           ← 戻る
