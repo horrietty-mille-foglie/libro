@@ -9,6 +9,8 @@ import {
 import { deleteImage, getSignedImageUrl } from '../lib/storage'
 import { authFetch, isApiAuthError, AUTH_ERROR_MESSAGE } from '../lib/authFetch'
 import { goBack } from '../lib/goBack'
+import { useBackToClose } from '../hooks/useBackToClose'
+import { useScrollLock } from '../hooks/useScrollLock'
 import ImageUploader from '../components/ImageUploader'
 import CoverUploader from '../components/CoverUploader'
 
@@ -35,6 +37,8 @@ function formatDate(dateStr) {
 function DateModal({ startedAt, finishedAt, onSave, onClose }) {
   const [s, setS] = useState(startedAt || '')
   const [f, setF] = useState(finishedAt || '')
+  useBackToClose(onClose)
+  useScrollLock()
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
@@ -65,6 +69,9 @@ function DateModal({ startedAt, finishedAt, onSave, onClose }) {
 
 // ── 原寸モーダル ──────────────────────────────────────────────
 function ImageModal({ url, onClose }) {
+  useBackToClose(onClose)
+  useScrollLock()
+
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="relative" onClick={e => e.stopPropagation()}>

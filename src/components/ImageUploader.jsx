@@ -1,9 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { processImageFile } from '../lib/imageProcessing'
 import { uploadImage, deleteImage, getSignedImageUrl } from '../lib/storage'
+import { useBackToClose } from '../hooks/useBackToClose'
+import { useScrollLock } from '../hooks/useScrollLock'
 
 // ── 原寸モーダル ──────────────────────────────────────────────
 function ImageModal({ url, onClose }) {
+  useBackToClose(onClose)
+  useScrollLock()
+
   return (
     <div
       className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
