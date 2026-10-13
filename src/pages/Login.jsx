@@ -39,7 +39,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-dvh flex items-center justify-center bg-gray-50 dark:bg-gray-900">
       <div className="p-10 bg-white dark:bg-gray-800 rounded-lg shadow-md w-full max-w-sm">
         <h1 className="text-4xl font-semibold mb-2 text-gray-800 dark:text-gray-100 text-center">Libro</h1>
         <p className="text-gray-500 dark:text-gray-400 mb-8 text-center">読書メモアプリ</p>

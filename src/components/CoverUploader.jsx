@@ -95,7 +95,7 @@ export default function CoverUploader({ currentCoverUrl, bookId, onCoverChange }
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*,.heic,.heif"
+        accept="image/*"
         className="hidden"
         onChange={handleFileChange}
       />

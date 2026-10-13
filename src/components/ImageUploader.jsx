@@ -21,7 +21,7 @@ function ImageModal({ url, onClose }) {
         >
           ✕ 閉じる
         </button>
-        <img src={url} alt="" className="max-w-[90vw] max-h-[85vh] object-contain rounded" />
+        <img src={url} alt="" className="max-w-[90vw] max-h-[85dvh] object-contain rounded" />
       </div>
     </div>
   )
@@ -189,7 +189,7 @@ export default function ImageUploader({ bookId, existingImages, onImagesChange }
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*,.heic,.heif"
+        accept="image/*"
         className="hidden"
         onChange={handleFileChange}
       />

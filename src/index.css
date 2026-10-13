@@ -1,3 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    /* タップ時の青いハイライトを消す */
+    -webkit-tap-highlight-color: transparent;
+  }
+}

@@ -110,7 +110,7 @@ export default function Dashboard() {
     : books.filter(b => b.status === activeFilter)
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-dvh bg-gray-50 dark:bg-gray-900">
       {/* ヘッダー */}
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 flex items-center justify-between sticky top-0 z-10">
         <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Libro</h1>
@@ -194,7 +194,10 @@ export default function Dashboard() {
       </div>
 
       {/* メインコンテンツ */}
-      <main className="px-4 sm:px-6 py-6 max-w-7xl mx-auto">
+      <main
+        className="px-4 sm:px-6 pt-6 max-w-7xl mx-auto"
+        style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
+      >
         {loading && (
           <p className="text-center text-gray-400 dark:text-gray-500 py-20">読み込み中…</p>
         )}
@@ -231,7 +234,8 @@ export default function Dashboard() {
 
       <button
         onClick={() => navigate('/books/new')}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white text-2xl rounded-full shadow-lg hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center z-20 cursor-pointer"
+        className="fixed right-6 w-14 h-14 bg-blue-600 text-white text-2xl rounded-full shadow-lg hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center z-20 cursor-pointer"
+        style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
         title="本を登録"
       >
         +

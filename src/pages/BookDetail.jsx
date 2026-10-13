@@ -76,7 +76,7 @@ function ImageModal({ url, onClose }) {
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="relative" onClick={e => e.stopPropagation()}>
         <button onClick={onClose} className="absolute -top-10 right-0 text-white text-sm hover:text-gray-300">✕ 閉じる</button>
-        <img src={url} alt="" className="max-w-[90vw] max-h-[85vh] object-contain rounded" />
+        <img src={url} alt="" className="max-w-[90vw] max-h-[85dvh] object-contain rounded" />
       </div>
     </div>
   )
@@ -163,7 +163,7 @@ function NotesTab({ bookId, navigate }) {
   if (error)   return <p className="text-center text-red-500 py-12">{error}</p>
 
   return (
-    <div className="relative pb-20">
+    <div className="relative" style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}>
       {notes.length === 0 ? (
         <div className="text-center py-16">
           <p className="text-3xl mb-3">📝</p>
@@ -178,7 +178,8 @@ function NotesTab({ bookId, navigate }) {
       )}
       <button
         onClick={() => navigate(`/books/${bookId}/notes/new`)}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white text-2xl rounded-full shadow-lg hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center z-20 cursor-pointer"
+        className="fixed right-6 w-14 h-14 bg-blue-600 text-white text-2xl rounded-full shadow-lg hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center z-20 cursor-pointer"
+        style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
         title="メモを追加"
       >+</button>
     </div>
@@ -468,20 +469,20 @@ export default function BookDetail() {
   }
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-dvh flex items-center justify-center bg-gray-50 dark:bg-gray-900">
       <p className="text-gray-400 dark:text-gray-500">読み込み中…</p>
     </div>
   )
 
   if (error || !book) return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-dvh flex flex-col items-center justify-center gap-4 bg-gray-50 dark:bg-gray-900">
       <p className="text-red-500">{error || '書籍が見つかりません'}</p>
       <button onClick={() => goBack(navigate, '/dashboard')} className="text-sm text-blue-600 underline">一覧へ戻る</button>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-dvh bg-gray-50 dark:bg-gray-900">
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 flex items-center gap-3">
         <button onClick={() => goBack(navigate, '/dashboard')}
           className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 flex items-center gap-1 text-sm">

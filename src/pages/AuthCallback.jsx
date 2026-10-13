@@ -23,7 +23,7 @@ export default function AuthCallback() {
   }, [navigate])
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-dvh flex items-center justify-center">
       <p className="text-gray-500">認証中...</p>
     </div>
   )

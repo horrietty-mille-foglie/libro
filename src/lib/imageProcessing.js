@@ -8,7 +8,9 @@ const SUPPORTED_TYPES = [
 export async function processImageFile(file) {
   const type = file.type.toLowerCase()
   const name = file.name.toLowerCase()
-  const isHeic = type === 'image/heic' || type === 'image/heif'
+  // MIME タイプ（image/heic-sequence 等の派生も含む）と拡張子の両方で判定する。
+  // Android では MIME が空で返ることがあるため、拡張子判定も残す。
+  const isHeic = type.startsWith('image/heic') || type.startsWith('image/heif')
     || name.endsWith('.heic') || name.endsWith('.heif')
 
   if (!isHeic && !SUPPORTED_TYPES.includes(type)) {
