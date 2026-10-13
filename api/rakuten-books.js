@@ -1,4 +1,15 @@
+import { requireUser } from './_lib/auth.js'
+
 export default async function handler(req, res) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  const auth = await requireUser(req)
+  if (auth.status) {
+    return res.status(auth.status).json(auth.body)
+  }
+
   const { isbn } = req.query
   if (!isbn || !/^\d+$/.test(isbn)) {
     return res.status(400).json({ error: 'Invalid ISBN' })
@@ -21,17 +32,12 @@ export default async function handler(req, res) {
     'Origin': 'https://libro-app-mu.vercel.app'
   }
 
-  console.log('[rakuten-books] Request URL:', url.replace(accessKey, '***'))
-  console.log('[rakuten-books] Request Headers:', requestHeaders)
-
   try {
     const response = await fetch(url, { headers: requestHeaders })
     const data = await response.json()
-    console.log('[rakuten-books] Response status:', response.status)
-    console.log('[rakuten-books] Response body:', JSON.stringify(data).substring(0, 200))
     return res.status(response.status).json(data)
   } catch (err) {
-    console.log('[rakuten-books] Fetch error:', String(err))
-    return res.status(502).json({ error: 'Upstream API error', detail: String(err) })
+    console.error('[rakuten-books] Fetch error:', err)
+    return res.status(502).json({ error: 'Upstream API error' })
   }
 }

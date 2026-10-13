@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { lookupByISBN } from '../lib/isbn'
 import { createBook } from '../lib/api'
 import { deleteImage } from '../lib/storage'
+import { isApiAuthError, AUTH_ERROR_MESSAGE } from '../lib/authFetch'
 import CoverUploader from '../components/CoverUploader'
 
 const STATUS_OPTIONS = ['積読', '読書中', '読了']
@@ -10,7 +11,7 @@ const STATUS_OPTIONS = ['積読', '読書中', '読了']
 export default function BookNew() {
   const navigate = useNavigate()
   const [isbn, setIsbn] = useState('')
-  const [lookupState, setLookupState] = useState('idle') // idle | loading | found | notfound | error
+  const [lookupState, setLookupState] = useState('idle') // idle | loading | found | notfound | error | authError
   const [form, setForm] = useState({
     title: '', author: '', publisher: '', cover_url: '', status: '積読',
   })
@@ -39,8 +40,8 @@ export default function BookNew() {
         cover_url: result.cover_url || '',
       }))
       setLookupState('found')
-    } catch {
-      setLookupState('error')
+    } catch (err) {
+      setLookupState(isApiAuthError(err) ? 'authError' : 'error')
     }
   }
 
@@ -113,6 +114,9 @@ export default function BookNew() {
           )}
           {lookupState === 'error' && (
             <p className="mt-2 text-sm text-red-600">通信エラーが発生しました。再度お試しください</p>
+          )}
+          {lookupState === 'authError' && (
+            <p className="mt-2 text-sm text-red-600">{AUTH_ERROR_MESSAGE}</p>
           )}
           {lookupState === 'found' && (
             <p className="mt-2 text-sm text-green-600">書誌情報を取得しました。内容を確認して登録してください</p>

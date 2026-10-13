@@ -1,3 +1,5 @@
+import { authFetch, isApiAuthError } from './authFetch'
+
 function normalizeISBN(isbn) {
   return isbn.replace(/-/g, '').trim()
 }
@@ -31,7 +33,7 @@ async function lookupOpenLibraryCover(isbn) {
 
 async function lookupRakutenBooks(isbn) {
   try {
-    const res = await fetch('/api/rakuten-books?isbn=' + isbn)
+    const res = await authFetch('/api/rakuten-books?isbn=' + isbn)
     if (!res.ok) return null
     const json = await res.json()
     const item = json?.Items?.[0]?.Item
@@ -42,7 +44,9 @@ async function lookupRakutenBooks(isbn) {
       publisher: item.publisherName || null,
       cover_url: item.largeImageUrl || null,
     }
-  } catch {
+  } catch (err) {
+    // 認証切れは呼び出し元に伝える（その他の通信エラーは従来どおり無視）
+    if (isApiAuthError(err)) throw err
     return null
   }
 }
@@ -86,7 +90,9 @@ export async function lookupByISBN(isbn) {
             openbd.cover_url = olCover
           }
         }
-      } catch {}
+      } catch {
+        // 書影が取れないだけなので続行する
+      }
     }
     return openbd
   }

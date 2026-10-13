@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+.vercel
+
+# 環境変数（.env.example は除外しない）
+.env
+.env.production
+.env.development

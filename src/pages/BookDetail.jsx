@@ -7,6 +7,7 @@ import {
   updateBookImageCaption,
 } from '../lib/api'
 import { deleteImage, getSignedImageUrl } from '../lib/storage'
+import { authFetch, isApiAuthError, AUTH_ERROR_MESSAGE } from '../lib/authFetch'
 import ImageUploader from '../components/ImageUploader'
 import CoverUploader from '../components/CoverUploader'
 
@@ -240,7 +241,7 @@ function SummaryTab({ book, onBookUpdated }) {
         setAiError('整理できるメモがありません')
         return
       }
-      const res = await fetch('/api/organize-notes', {
+      const res = await authFetch('/api/organize-notes', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
@@ -253,7 +254,7 @@ function SummaryTab({ book, onBookUpdated }) {
       setDraft(data.summary)
       setEditing(true)
     } catch (err) {
-      setAiError(err.message)
+      setAiError(isApiAuthError(err) ? AUTH_ERROR_MESSAGE : err.message)
     } finally {
       setAiLoading(false)
     }

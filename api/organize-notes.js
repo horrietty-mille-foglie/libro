@@ -1,6 +1,13 @@
+import { requireUser } from './_lib/auth.js'
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  const auth = await requireUser(req)
+  if (auth.status) {
+    return res.status(auth.status).json(auth.body)
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY
